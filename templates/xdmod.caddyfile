@@ -1,0 +1,61 @@
+http://{{fqdn}} {
+  ## Enforce TLS 1.2 and above (SSLv2 and SSLv3 are disabled by default)
+  #tls {
+  #    protocols tls1.2 tls1.3
+  #}
+
+  # Add HSTS header
+  header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+  # Set document root
+  root * /opt/xdmod-11.0.2/share/html
+
+  # Enable PHP processing
+  php_fastcgi unix//run/php-fpm/www.sock
+  encode gzip
+
+  # Directory index
+  file_server
+  try_files {path} {path}/ /index.php?{query}
+
+  # Handle REST API routing
+  @rest {
+      path /rest/*
+  }
+  handle @rest {
+      rewrite * /rest/index.php
+      php_fastcgi unix//run/php-fpm/www.sock
+  }
+
+  ## SimpleSAML Single Sign On authentication (uncomment to enable)
+  # redir /simplesaml /simplesaml/
+  # handle /simplesaml/* {
+  #     root * /opt/xdmod-11.0.2/share/vendor/simplesamlphp/simplesamlphp/www
+  #     php_fastcgi unix//run/php-fpm/www.sock {
+  #         env SIMPLESAMLPHP_CONFIG_DIR /opt/xdmod-11.0.2/etc/simplesamlphp/config
+  #     }
+  #     file_server
+  # }
+
+  # Logging (Caddy handles log rotation automatically)
+  log {
+      output file /var/log/xdmod/caddy-access.log {
+          roll_size 1mb
+          roll_keep 5
+      }
+  }
+}
+#https://{{env_hostname}}:443 {
+#
+#  # Enforce TLS 1.2 and above (SSLv2 and SSLv3 are disabled by default)
+#  tls {
+#      protocols tls1.2 tls1.3
+#  }
+#  # Logging (Caddy handles log rotation automatically)
+#  log {
+#      output file /var/log/xdmod/caddy-access-ssl.log {
+#          roll_size 1mb
+#          roll_keep 5
+#      }
+#  }
+#}
